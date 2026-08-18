@@ -1,0 +1,47 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-tg-news-bot
+  cancel-in-progress: false
+
+jobs:
+  # 1) Kod build bo'lishini tekshirish (buzuq kod deploy bo'lmasin)
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+
+  # 2) VPS'ga deploy (build o'tgach)
+  deploy:
+    needs: build-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: VPS'ga SSH orqali deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            APP_DIR=/home/deploy/apps/tg-news-bot
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone https://github.com/suyunovdev/tg-tech-news-bot.git "$APP_DIR"
+            fi
+            cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+            npm ci
+            npm run build
+            echo "✅ Deploy tayyor. Timer bo'yicha ishga tushadi."

@@ -1,0 +1,29 @@
+{
+  "name": "tg-tech-news-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RSS manbalardan IT/texnologiya yangiliklarini olib, Claude bilan o'zbek tiliga qayta yozib, Telegram kanalga joylaydigan agent",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "once": "tsx src/index.ts",
+    "healthcheck": "tsx src/index.ts --healthcheck"
+  },
+  "dependencies": {
+    "@google/genai": "^2.17.1",
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.4.7",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^20.19.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
