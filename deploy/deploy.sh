@@ -5,7 +5,7 @@
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/home/deploy/apps/tg-news-bot}"
-REPO_URL="${REPO_URL:-https://github.com/suyunovdev/tg-tech-news-bot.git}"
+REPO_URL="${REPO_URL:-https://github.com/suyunovdev/post-sender-bot-.git}"
 BRANCH="${1:-main}"
 
 if [ ! -d "$APP_DIR/.git" ]; then

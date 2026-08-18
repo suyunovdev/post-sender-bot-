@@ -37,7 +37,7 @@ jobs:
             set -e
             APP_DIR=/home/deploy/apps/tg-news-bot
             if [ ! -d "$APP_DIR/.git" ]; then
-              git clone https://github.com/suyunovdev/tg-tech-news-bot.git "$APP_DIR"
+              git clone https://github.com/suyunovdev/post-sender-bot-.git "$APP_DIR"
             fi
             cd "$APP_DIR"
             git fetch origin main
