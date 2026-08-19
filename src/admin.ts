@@ -1,14 +1,14 @@
-import { Bot } from "grammy";
+import { Bot, InlineKeyboard, type Context } from "grammy";
 import { config } from "./config.js";
 import type { StateStore } from "./db.js";
 import { effective, parsePattern, parseTimes } from "./settings.js";
-import { runOnce, postProjectById, postTopic } from "./poster.js";
+import { runOnce, prepareTopic, prepareProject, publishPrepared, type PreparedPost } from "./poster.js";
 
 const HELP = `🤖 Admin buyruqlari:
 
 /holat — joriy sozlamalar va keyingi post vaqti
 /post — hoziroq bitta post qo'yish
-/mavzu <matn> — bergan mavzuingiz bo'yicha darhol post
+/mavzu <matn> — mavzu bo'yicha post (avval ko'rsatib, tasdiqlatadi)
 /pauza — jadvalni to'xtatish
 /davom — jadvalni davom ettirish
 
@@ -22,7 +22,7 @@ const HELP = `🤖 Admin buyruqlari:
 /manba_ochir <id> — RSS manba o'chirish
 
 /loyihalar — loyihalar ro'yxati
-/loyiha_post <id> — aynan shu loyiha haqida darhol post
+/loyiha_post <id> — loyiha posti (avval ko'rsatib, tasdiqlatadi)
 /loyiha_ochir <id> — loyiha o'chirish
 /loyiha_qosh — yangi loyiha (format ko'rsatiladi)`;
 
@@ -62,6 +62,25 @@ export function startAdminBot(store: StateStore): Bot {
     if (ctx.from && isAdmin(ctx.from.id)) return next();
   });
 
+  // Tasdiq kutayotgan tayyor postlar (token -> post). 10 daqiqadan keyin o'chadi.
+  const pending = new Map<string, PreparedPost>();
+  let tokenCounter = 0;
+
+  /** Postni ko'rsatib, "✅ Yuborish / ❌ Bekor" tugmalari bilan tasdiq so'raydi. */
+  const presentPreview = (ctx: Context, p: PreparedPost) => {
+    const token = String(++tokenCounter);
+    pending.set(token, p);
+    setTimeout(() => pending.delete(token), 10 * 60 * 1000);
+    const kb = new InlineKeyboard()
+      .text("✅ Yuborish", `send:${token}`)
+      .text("❌ Bekor", `cancel:${token}`);
+    return ctx.reply(`👀 <b>Ko'rib chiqing (hali yuborilmadi):</b>\n\n${p.text}`, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+      link_preview_options: { is_disabled: true },
+    });
+  };
+
   bot.command(["start", "help"], (ctx) => ctx.reply(HELP));
 
   bot.command("holat", (ctx) => {
@@ -91,8 +110,8 @@ export function startAdminBot(store: StateStore): Bot {
     }
     await ctx.reply(`⏳ "${topic}" mavzusida post tayyorlanmoqda...`);
     try {
-      const t = await postTopic(store, topic);
-      return ctx.reply(`✅ Yuborildi: ${t}`);
+      const p = await prepareTopic(store, topic);
+      return presentPreview(ctx, p);
     } catch (err) {
       return ctx.reply(`❌ ${(err as Error).message}`);
     }
@@ -185,8 +204,8 @@ export function startAdminBot(store: StateStore): Bot {
     }
     await ctx.reply("⏳ Loyiha posti tayyorlanmoqda...");
     try {
-      const t = await postProjectById(store, id);
-      return ctx.reply(`✅ Yuborildi: ${t}`);
+      const p = await prepareProject(store, id);
+      return presentPreview(ctx, p);
     } catch (err) {
       return ctx.reply(`❌ ${(err as Error).message}`);
     }
@@ -227,6 +246,31 @@ Misol:
       tech: techRaw ? techRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
     });
     return ctx.reply(`✅ Loyiha qo'shildi: ${name}\nJami: ${store.listProjects().length} ta loyiha.`);
+  });
+
+  // "✅ Yuborish" bosilganда — postni kanalga joylaydi.
+  bot.callbackQuery(/^send:(.+)$/, async (ctx) => {
+    const token = ctx.match[1];
+    const p = pending.get(token);
+    if (!p) {
+      await ctx.answerCallbackQuery("Muddati o'tgan");
+      return ctx.editMessageText("⌛ Bu taklif eskirgan — qaytadan buyruq bering.");
+    }
+    pending.delete(token);
+    await ctx.answerCallbackQuery("Yuborilmoqda...");
+    try {
+      await publishPrepared(store, p);
+      await ctx.editMessageText(`✅ Kanalga yuborildi:\n${p.title}`);
+    } catch (err) {
+      await ctx.editMessageText(`❌ Yuborishда xato: ${(err as Error).message}`);
+    }
+  });
+
+  // "❌ Bekor" bosilganда — bekor qiladi.
+  bot.callbackQuery(/^cancel:(.+)$/, async (ctx) => {
+    pending.delete(ctx.match[1]);
+    await ctx.answerCallbackQuery("Bekor qilindi");
+    await ctx.editMessageText("❌ Bekor qilindi — hech narsa yuborilmadi.");
   });
 
   bot.catch((err) => console.error("[admin-bot] xato:", err.message));

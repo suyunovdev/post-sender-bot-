@@ -13,34 +13,50 @@ export interface RunResult {
   lines: string[];
 }
 
+/** Tayyorlangan, lekin hali yuborilmagan post (preview/tasdiq uchun). */
+export interface PreparedPost {
+  text: string;
+  imageUrl?: string;
+  markId: string;
+  source: string;
+  title: string;
+}
+
 // Bir vaqtda faqat bitta post-sikli ishlashi uchun oddiy qulf
 // (rejalashtiruvchi va /post buyrug'i to'qnashmasin).
 let running = false;
 
+/** Tayyorlangan postni kanalga yuboradi va bazaga belgilaydi. */
+export async function publishPrepared(store: StateStore, p: PreparedPost): Promise<void> {
+  await publish(p.text, p.imageUrl);
+  store.markPosted(p.markId, p.source, p.title);
+}
+
 /**
- * Admin bergan MAVZU bo'yicha darhol post qo'yadi (chatда /mavzu ...).
- * Rejalashtirilgan navbatga tegmaydi.
+ * Admin bergan MAVZU bo'yicha post TAYYORLAYDI (yubormaydi — preview uchun).
  */
-export async function postTopic(store: StateStore, topic: string): Promise<string> {
-  if (running) throw new Error("Hozir band — avvalgi post tugashini kuting.");
+export async function prepareTopic(store: StateStore, topic: string): Promise<PreparedPost> {
+  if (running) throw new Error("Hozir band — biroz kuting.");
   running = true;
   try {
     const s = effective(store);
     const post = await generateOnTopic(topic);
-    await publish(formatMessage(post, undefined, s.signature));
-    store.markPosted(`topic:${Date.now()}`, "Original", post.title);
-    return post.title;
+    return {
+      text: formatMessage(post, undefined, s.signature),
+      markId: `topic:${Date.now()}`,
+      source: "Original",
+      title: post.title,
+    };
   } finally {
     running = false;
   }
 }
 
 /**
- * Aniq bitta loyiha haqida darhol post qo'yadi (chatда /loyiha_post <id>).
- * Rejalashtirilgan navbat (seq/pattern)ga tegmaydi — faqat o'sha loyiha posti.
+ * Aniq loyiha haqida post TAYYORLAYDI (yubormaydi — preview uchun).
  */
-export async function postProjectById(store: StateStore, id: number): Promise<string> {
-  if (running) throw new Error("Hozir band — avvalgi post tugashini kuting.");
+export async function prepareProject(store: StateStore, id: number): Promise<PreparedPost> {
+  if (running) throw new Error("Hozir band — biroz kuting.");
   running = true;
   try {
     const s = effective(store);
@@ -49,9 +65,12 @@ export async function postProjectById(store: StateStore, id: number): Promise<st
     const angleSeq = store.countBySource("Project"); // burchak xilma-xilligi uchun
     const post = await generateProjectPost(project, store.recentTitles("Project", 15), angleSeq);
     const link = project.url ? { url: project.url, label: `🌐 ${project.name}` } : undefined;
-    await publish(formatMessage(post, link, s.signature));
-    store.markPosted(`project:${Date.now()}`, "Project", post.title);
-    return `${post.title} (${project.name})`;
+    return {
+      text: formatMessage(post, link, s.signature),
+      markId: `project:${Date.now()}`,
+      source: "Project",
+      title: `${post.title} (${project.name})`,
+    };
   } finally {
     running = false;
   }
