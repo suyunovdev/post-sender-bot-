@@ -25,7 +25,136 @@ export class StateStore {
         key         TEXT PRIMARY KEY,
         value       TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS settings (
+        key         TEXT PRIMARY KEY,
+        value       TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS sources (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT NOT NULL,
+        url         TEXT NOT NULL UNIQUE
+      );
+      CREATE TABLE IF NOT EXISTS projects (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT NOT NULL,
+        tagline     TEXT NOT NULL,
+        url         TEXT,
+        description TEXT NOT NULL,
+        highlights  TEXT NOT NULL,     -- JSON massiv
+        tech        TEXT               -- JSON massiv (ixtiyoriy)
+      );
     `);
+  }
+
+  // ---- Sozlamalar (key/value) — chatдан o'zgartiriladi ----
+  getSetting(key: string): string | undefined {
+    const row = this.db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as
+      | { value: string }
+      | undefined;
+    return row?.value;
+  }
+
+  setSetting(key: string, value: string): void {
+    this.db
+      .prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)")
+      .run(key, value);
+  }
+
+  // ---- RSS manbalar ----
+  listSources(): Array<{ id: number; name: string; url: string }> {
+    return this.db
+      .prepare("SELECT id, name, url FROM sources ORDER BY id")
+      .all() as Array<{ id: number; name: string; url: string }>;
+  }
+
+  addSource(name: string, url: string): void {
+    this.db.prepare("INSERT OR IGNORE INTO sources (name, url) VALUES (?, ?)").run(name, url);
+  }
+
+  removeSource(id: number): boolean {
+    return this.db.prepare("DELETE FROM sources WHERE id = ?").run(id).changes > 0;
+  }
+
+  // ---- Loyihalar ----
+  listProjects(): Array<{
+    id: number;
+    name: string;
+    tagline: string;
+    url?: string;
+    description: string;
+    highlights: string[];
+    tech?: string[];
+  }> {
+    const rows = this.db
+      .prepare("SELECT id, name, tagline, url, description, highlights, tech FROM projects ORDER BY id")
+      .all() as Array<{
+      id: number;
+      name: string;
+      tagline: string;
+      url: string | null;
+      description: string;
+      highlights: string;
+      tech: string | null;
+    }>;
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      tagline: r.tagline,
+      url: r.url ?? undefined,
+      description: r.description,
+      highlights: JSON.parse(r.highlights) as string[],
+      tech: r.tech ? (JSON.parse(r.tech) as string[]) : undefined,
+    }));
+  }
+
+  addProject(p: {
+    name: string;
+    tagline: string;
+    url?: string;
+    description: string;
+    highlights: string[];
+    tech?: string[];
+  }): void {
+    this.db
+      .prepare(
+        "INSERT INTO projects (name, tagline, url, description, highlights, tech) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .run(
+        p.name,
+        p.tagline,
+        p.url ?? null,
+        p.description,
+        JSON.stringify(p.highlights),
+        p.tech ? JSON.stringify(p.tech) : null
+      );
+  }
+
+  removeProject(id: number): boolean {
+    return this.db.prepare("DELETE FROM projects WHERE id = ?").run(id).changes > 0;
+  }
+
+  /** Manbalar/loyihalar bo'sh bo'lsa — koddagi standartlardan bir marta to'ldirish. */
+  seedIfEmpty(
+    defaultSources: Array<{ name: string; url: string }>,
+    defaultProjects: Array<{
+      name: string;
+      tagline: string;
+      url?: string;
+      description: string;
+      highlights: string[];
+      tech?: string[];
+    }>
+  ): void {
+    const nSources = (this.db.prepare("SELECT COUNT(*) AS n FROM sources").get() as { n: number }).n;
+    if (nSources === 0) {
+      const insert = this.db.prepare("INSERT OR IGNORE INTO sources (name, url) VALUES (?, ?)");
+      for (const s of defaultSources) insert.run(s.name, s.url);
+    }
+    const nProjects = (this.db.prepare("SELECT COUNT(*) AS n FROM projects").get() as { n: number })
+      .n;
+    if (nProjects === 0) {
+      for (const p of defaultProjects) this.addProject(p);
+    }
   }
 
   /**

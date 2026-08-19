@@ -1,18 +1,23 @@
 [Unit]
-Description=Telegram Tech News Bot (RSS + original + loyiha -> Gemini -> Telegram)
+Description=Telegram post-sender bot (doimiy xizmat: rejalashtiruvchi + admin-bot)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=oneshot
+Type=simple
 User=deploy
 WorkingDirectory=/home/deploy/apps/tg-news-bot
 EnvironmentFile=/home/deploy/apps/tg-news-bot/.env
-ExecStart=/usr/bin/node dist/index.js
-# Log stdout/stderr journalga tushadi: journalctl -u tg-news-bot
+ExecStart=/usr/bin/node dist/service.js
+Restart=always
+RestartSec=5
+# Log: journalctl -u tg-news-bot -f
 StandardOutput=journal
 StandardError=journal
-# Xavfsizlik cheklovlari (senior amaliyot)
+# Xavfsizlik cheklovlari
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

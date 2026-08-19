@@ -58,6 +58,13 @@ export const config = {
     .filter((s): s is "rss" | "original" | "project" =>
       s === "rss" || s === "original" || s === "project"
     ),
+  /** Standart post jadvali (Toshkent vaqti, HH:MM). Chatдан o'zgartiriladi. */
+  scheduleDefault: optional("SCHEDULE", "10:00,19:00"),
+  /** Admin-botга buyruq bera oladigan Telegram ID'lar. */
+  adminUserIds: optional("ADMIN_USER_IDS", "6307446924")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
 } as const;
 
 export type AppConfig = typeof config;

@@ -56,10 +56,11 @@ npm run healthcheck
 npm run once
 ```
 
-## 3. Deploy — GitHub CI/CD + systemd timer (Contabo VPS)
+## 3. Deploy — GitHub CI/CD + systemd (doimiy xizmat, Contabo VPS)
 
 Kod GitHub'ga push qilinganда avtomatik VPS'ga chiqadi (`.github/workflows/deploy.yml`).
-Postlar jadvalini esa VPS'dagi **systemd timer** boshqaradi (kuniga 2 marta: 10:00, 19:00 Toshkent).
+VPS'da **doimiy xizmat** (`node dist/service.js`) ishlab turadi: ichida **rejalashtiruvchi**
+(belgilangan vaqtда post qo'yadi) va **admin-bot** (chatдан boshqaruv — §4) bor.
 
 ### a) GitHub sozlash (bir marta)
 1. Repo yarating va push qiling (masalan `suyunovdev/tg-tech-news-bot`).
@@ -80,25 +81,38 @@ cd /home/deploy/apps/tg-news-bot
 npm ci && npm run build
 cp .env.example .env && nano .env        # tokenlar, kanal, GEMINI_API_KEY, loyihalar
 
-# systemd o'rnatish
+# systemd (doimiy xizmat)
 sudo cp deploy/tg-news-bot.service /etc/systemd/system/
-sudo cp deploy/tg-news-bot.timer   /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now tg-news-bot.timer
+sudo systemctl enable --now tg-news-bot
 
 # Tekshirish
-node dist/index.js --healthcheck            # bot+kanal ulanishi
-sudo systemctl start tg-news-bot            # hoziroq 1 marta ishlatib ko'rish
-journalctl -u tg-news-bot -f                # loglar
-systemctl list-timers tg-news-bot.timer     # keyingi ishga tushish vaqti
+node dist/index.js --healthcheck      # bot+kanal ulanishi
+systemctl status tg-news-bot          # xizmat ishlayaptimi
+journalctl -u tg-news-bot -f          # loglar (admin-bot + rejalashtiruvchi)
 ```
 
 ### c) Keyin — har push avtomatik
 `git push origin main` → GitHub Action build tekshiradi → VPS'ga SSH orqali `git pull + npm ci + build`.
-Kod yangilanadi; timer o'z jadvalida ishlab turadi.
+Kod yangilanadi. (Xizmatni qayta ishga tushirish uchun deploy oxirida `sudo systemctl restart tg-news-bot` qo'shsa bo'ladi.)
 
-Jadvalni o'zgartirish: `deploy/tg-news-bot.timer` → `OnCalendar` (masalan kuniga 3 marta: `*-*-* 09,14,19:00:00 Asia/Tashkent`).
-Bir ishда nechta post: `.env` → `MAX_POSTS_PER_RUN`.
+## 4. Admin-bot orqali boshqaruv (Telegram)
+
+Botga **shaxsiy chatда** (admin ID `ADMIN_USER_IDS`da) buyruq yozing:
+
+| Buyruq | Vazifa |
+|---|---|
+| `/holat` | joriy sozlamalar + keyingi post vaqti |
+| `/post` | hoziroq bitta post qo'yish |
+| `/pauza` · `/davom` | jadvalni to'xtatish / davom ettirish |
+| `/imzo <matn>` | post imzosi (bo'sh — imzosiz) |
+| `/jadval 10:00 19:00` | post vaqtlari (Toshkent) |
+| `/navbat rss,rss,original,project` | kontent navbati |
+| `/soni <n>` | bir ishда nechta post |
+| `/manbalar` · `/manba_qosh <Nom> <url>` · `/manba_ochir <id>` | RSS manbalar |
+| `/loyihalar` · `/loyiha_qosh` · `/loyiha_ochir <id>` | loyihalar |
+
+Sozlamalar SQLite'да saqlanadi — xizmat qayta ishga tushsa ham yo'qolmaydi.
 
 ## Eslatmalar
 

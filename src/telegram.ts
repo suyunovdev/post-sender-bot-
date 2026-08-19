@@ -14,7 +14,8 @@ function escapeHtml(s: string): string {
  */
 export function formatMessage(
   post: RewrittenPost,
-  link?: { url: string; label: string }
+  link?: { url: string; label: string },
+  signature?: string
 ): string {
   const tags = post.hashtags.map((h) => `#${h.replace(/[^\p{L}\p{N}_]/gu, "")}`).join(" ");
   const parts = [
@@ -28,8 +29,9 @@ export function formatMessage(
   if (link) {
     parts.push("", `<a href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a>`);
   }
-  if (config.postSignature) {
-    parts.push("", escapeHtml(config.postSignature));
+  const sig = signature ?? config.postSignature;
+  if (sig) {
+    parts.push("", escapeHtml(sig));
   }
   return parts.join("\n");
 }
