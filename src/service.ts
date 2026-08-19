@@ -4,6 +4,7 @@ import { PROJECTS } from "./projects.js";
 import { effective } from "./settings.js";
 import { runOnce } from "./poster.js";
 import { startAdminBot } from "./admin.js";
+import { notifyAdmins } from "./alerts.js";
 
 /** Hozirgi Toshkent vaqti "HH:MM" shaklida. */
 function tashkentHHMM(): string {
@@ -16,6 +17,18 @@ function tashkentHHMM(): string {
 }
 
 async function main(): Promise<void> {
+  // Kutilmagan xatolar — adminga ogohlantirish
+  process.on("unhandledRejection", (reason) => {
+    console.error("[unhandledRejection]", reason);
+    void notifyAdmins(`🔴 tg-news-bot kutilmagan xato (unhandledRejection):\n${String(reason)}`);
+  });
+  process.on("uncaughtException", (err) => {
+    console.error("[uncaughtException]", err);
+    void notifyAdmins(`🔴 tg-news-bot kutilmagan xato (uncaughtException):\n${err.message}`).finally(
+      () => process.exit(1)
+    );
+  });
+
   const store = new StateStore(config.dbPath);
   // Manbalar/loyihalarni koddan bazaga bir marta ko'chirish (keyin chatдан tahrirlanadi).
   store.seedIfEmpty(SOURCES, PROJECTS);
@@ -37,8 +50,15 @@ async function main(): Promise<void> {
       try {
         const r = await runOnce(store);
         console.log(r.lines.join("\n"));
+        const failed = r.lines.filter((l) => l.startsWith("❌"));
+        if (failed.length > 0) {
+          await notifyAdmins(`⚠️ Post muammosi (${hhmm} Toshkent):\n${failed.join("\n")}`);
+        } else if (r.sent === 0) {
+          await notifyAdmins(`⚠️ ${hhmm} (Toshkent) da hech qanday post yuborilmadi.`);
+        }
       } catch (err) {
         console.error("[scheduler] xato:", (err as Error).message);
+        await notifyAdmins(`🔴 Rejalashtirilgan post ISHLAMADI (${hhmm} Toshkent):\n${(err as Error).message}`);
       }
     })();
   }, 30_000);

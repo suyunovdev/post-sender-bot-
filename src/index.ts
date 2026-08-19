@@ -3,6 +3,7 @@ import { StateStore } from "./db.js";
 import { PROJECTS } from "./projects.js";
 import { runOnce } from "./poster.js";
 import { checkAccess } from "./telegram.js";
+import { notifyAdmins } from "./alerts.js";
 
 /**
  * CLI (qo'lda ishlatish uchun). Doimiy xizmat: `node dist/service.js`.
@@ -11,6 +12,13 @@ import { checkAccess } from "./telegram.js";
  */
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+
+  // systemd OnFailure yoki qo'lda: adminga ogohlantirish yuborib chiqadi.
+  if (args[0] === "--alert") {
+    const msg = args.slice(1).join(" ") || "🔴 tg-news-bot ogohlantirish";
+    await notifyAdmins(msg);
+    return;
+  }
 
   if (args.includes("--healthcheck")) {
     await checkAccess();

@@ -2,6 +2,8 @@
 Description=Telegram post-sender bot (doimiy xizmat: rejalashtiruvchi + admin-bot)
 After=network-online.target
 Wants=network-online.target
+# Xizmat butunlay to'xtasa (failed) — adminga Telegram ogohlantirish
+OnFailure=tg-news-bot-alert.service
 
 [Service]
 Type=simple

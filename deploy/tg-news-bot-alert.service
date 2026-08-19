@@ -1,0 +1,9 @@
+[Unit]
+Description=tg-news-bot ishlamay qolganда adminga Telegram ogohlantirish
+
+[Service]
+Type=oneshot
+User=deploy
+WorkingDirectory=/home/deploy/apps/tg-news-bot
+EnvironmentFile=/home/deploy/apps/tg-news-bot/.env
+ExecStart=/usr/bin/node dist/index.js --alert 🔴 tg-news-bot xizmati toxtab qoldi. Serverni va journalctl -u tg-news-bot ni tekshiring.
