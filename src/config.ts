@@ -40,6 +40,8 @@ export const config = {
   dbPath: optional("DB_PATH", "./data/state.sqlite"),
   postLang: optional("POST_LANG", "uz"),
   sendImages: optional("SEND_IMAGES", "1") === "1",
+  /** Har post oxiriga qo'shiladigan imzo (masalan "✍️ @Suyunov_dev1"). Bo'sh = imzosiz. */
+  postSignature: optional("POST_SIGNATURE", ""),
   /** Kanal mavzusi — noldan original post yozishда agentga beriladi. */
   channelTopic: optional("CHANNEL_TOPIC", "IT, sun'iy intellekt, dasturlash va texnologiya"),
   /**

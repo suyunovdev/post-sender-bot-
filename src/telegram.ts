@@ -28,6 +28,9 @@ export function formatMessage(
   if (link) {
     parts.push("", `<a href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a>`);
   }
+  if (config.postSignature) {
+    parts.push("", escapeHtml(config.postSignature));
+  }
   return parts.join("\n");
 }
 
