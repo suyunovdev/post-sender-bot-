@@ -1,7 +1,7 @@
 import type { StateStore } from "./db.js";
 import { fetchAll } from "./rss.js";
 import { rewrite } from "./rewrite.js";
-import { generateOriginal } from "./original.js";
+import { generateOriginal, generateOnTopic } from "./original.js";
 import { generateProjectPost } from "./projects.js";
 import { formatMessage, publish } from "./telegram.js";
 import { effective, type SlotType } from "./settings.js";
@@ -16,6 +16,24 @@ export interface RunResult {
 // Bir vaqtda faqat bitta post-sikli ishlashi uchun oddiy qulf
 // (rejalashtiruvchi va /post buyrug'i to'qnashmasin).
 let running = false;
+
+/**
+ * Admin bergan MAVZU bo'yicha darhol post qo'yadi (chatда /mavzu ...).
+ * Rejalashtirilgan navbatga tegmaydi.
+ */
+export async function postTopic(store: StateStore, topic: string): Promise<string> {
+  if (running) throw new Error("Hozir band — avvalgi post tugashini kuting.");
+  running = true;
+  try {
+    const s = effective(store);
+    const post = await generateOnTopic(topic);
+    await publish(formatMessage(post, undefined, s.signature));
+    store.markPosted(`topic:${Date.now()}`, "Original", post.title);
+    return post.title;
+  } finally {
+    running = false;
+  }
+}
 
 /**
  * Aniq bitta loyiha haqida darhol post qo'yadi (chatда /loyiha_post <id>).

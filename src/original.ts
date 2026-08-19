@@ -65,3 +65,23 @@ Kanal mavzusi doirasida shu turdagi bitta original post yoz.${avoidBlock}`;
     temperature: 1.0,
   });
 }
+
+/**
+ * Admin bergan aniq MAVZU bo'yicha bitta original post yozadi (chatда /mavzu ...).
+ * Kanal mavzusi doirasida bo'lmasa ham, aynan shu mavzuда yozadi.
+ */
+export async function generateOnTopic(topic: string): Promise<RewrittenPost> {
+  const lang = LANG_NAME[config.postLang] ?? "o'zbek";
+  const userContent = `Quyidagi mavzu bo'yicha bitta original post yoz (til: ${lang}):
+
+"${topic}"
+
+Mavzuni qiziqarli va foydali qilib ochib ber. Uslub qoidalari (yuqoridagi) saqlanadi.`;
+
+  return generatePost({
+    system: buildSystemPrompt(),
+    user: userContent,
+    maxOutputTokens: 3000,
+    temperature: 0.9,
+  });
+}

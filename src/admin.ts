@@ -2,12 +2,13 @@ import { Bot } from "grammy";
 import { config } from "./config.js";
 import type { StateStore } from "./db.js";
 import { effective, parsePattern, parseTimes } from "./settings.js";
-import { runOnce, postProjectById } from "./poster.js";
+import { runOnce, postProjectById, postTopic } from "./poster.js";
 
 const HELP = `🤖 Admin buyruqlari:
 
 /holat — joriy sozlamalar va keyingi post vaqti
 /post — hoziroq bitta post qo'yish
+/mavzu <matn> — bergan mavzuingiz bo'yicha darhol post
 /pauza — jadvalni to'xtatish
 /davom — jadvalni davom ettirish
 
@@ -81,6 +82,20 @@ export function startAdminBot(store: StateStore): Bot {
     await ctx.reply("⏳ Post tayyorlanmoqda...");
     const r = await runOnce(store, { max: 1 });
     return ctx.reply(r.lines.join("\n") || "Hech narsa yuborilmadi.");
+  });
+
+  bot.command("mavzu", async (ctx) => {
+    const topic = (ctx.match ?? "").trim();
+    if (!topic) {
+      return ctx.reply("❌ Mavzuni yozing. Masalan:\n/mavzu sun'iy intellekt kelajagi");
+    }
+    await ctx.reply(`⏳ "${topic}" mavzusida post tayyorlanmoqda...`);
+    try {
+      const t = await postTopic(store, topic);
+      return ctx.reply(`✅ Yuborildi: ${t}`);
+    } catch (err) {
+      return ctx.reply(`❌ ${(err as Error).message}`);
+    }
   });
 
   bot.command("pauza", (ctx) => {
