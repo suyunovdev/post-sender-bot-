@@ -2,7 +2,7 @@ import { Bot } from "grammy";
 import { config } from "./config.js";
 import type { StateStore } from "./db.js";
 import { effective, parsePattern, parseTimes } from "./settings.js";
-import { runOnce } from "./poster.js";
+import { runOnce, postProjectById } from "./poster.js";
 
 const HELP = `🤖 Admin buyruqlari:
 
@@ -21,6 +21,7 @@ const HELP = `🤖 Admin buyruqlari:
 /manba_ochir <id> — RSS manba o'chirish
 
 /loyihalar — loyihalar ro'yxati
+/loyiha_post <id> — aynan shu loyiha haqida darhol post
 /loyiha_ochir <id> — loyiha o'chirish
 /loyiha_qosh — yangi loyiha (format ko'rsatiladi)`;
 
@@ -155,6 +156,25 @@ export function startAdminBot(store: StateStore): Bot {
     const list = store.listProjects();
     if (list.length === 0) return ctx.reply("Loyiha yo'q.");
     return ctx.reply(list.map((p) => `${p.id}. ${p.name} — ${p.tagline}${p.url ? ` (${p.url})` : ""}`).join("\n"));
+  });
+
+  bot.command("loyiha_post", async (ctx) => {
+    const arg = (ctx.match ?? "").trim();
+    const id = parseInt(arg, 10);
+    if (!Number.isFinite(id)) {
+      const list = store.listProjects();
+      const menu = list.map((p) => `${p.id}. ${p.name}`).join("\n");
+      return ctx.reply(
+        `Qaysi loyiha? id bilan yuboring, masalan: /loyiha_post ${list[0]?.id ?? 1}\n\n${menu}`
+      );
+    }
+    await ctx.reply("⏳ Loyiha posti tayyorlanmoqda...");
+    try {
+      const t = await postProjectById(store, id);
+      return ctx.reply(`✅ Yuborildi: ${t}`);
+    } catch (err) {
+      return ctx.reply(`❌ ${(err as Error).message}`);
+    }
   });
 
   bot.command("loyiha_ochir", (ctx) => {

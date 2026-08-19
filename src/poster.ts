@@ -18,6 +18,28 @@ export interface RunResult {
 let running = false;
 
 /**
+ * Aniq bitta loyiha haqida darhol post qo'yadi (chatда /loyiha_post <id>).
+ * Rejalashtirilgan navbat (seq/pattern)ga tegmaydi — faqat o'sha loyiha posti.
+ */
+export async function postProjectById(store: StateStore, id: number): Promise<string> {
+  if (running) throw new Error("Hozir band — avvalgi post tugashini kuting.");
+  running = true;
+  try {
+    const s = effective(store);
+    const project = store.listProjects().find((p) => p.id === id);
+    if (!project) throw new Error(`Loyiha #${id} topilmadi (/loyihalar bilan tekshiring).`);
+    const angleSeq = store.countBySource("Project"); // burchak xilma-xilligi uchun
+    const post = await generateProjectPost(project, store.recentTitles("Project", 15), angleSeq);
+    const link = project.url ? { url: project.url, label: `🌐 ${project.name}` } : undefined;
+    await publish(formatMessage(post, link, s.signature));
+    store.markPosted(`project:${Date.now()}`, "Project", post.title);
+    return `${post.title} (${project.name})`;
+  } finally {
+    running = false;
+  }
+}
+
+/**
  * Bir "ish" — pattern navbatiga qarab `max` (yoki sozlamadagi) tagacha post qo'yadi.
  * Manbalar, loyihalar, imzo va navbat — hammasi BAZADAN o'qiladi (chatдан tahrirlangan).
  */
