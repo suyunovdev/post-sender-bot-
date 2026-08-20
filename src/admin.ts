@@ -3,12 +3,14 @@ import { config } from "./config.js";
 import type { StateStore } from "./db.js";
 import { effective, parsePattern, parseTimes } from "./settings.js";
 import { runOnce, prepareTopic, prepareProject, publishPrepared, type PreparedPost } from "./poster.js";
+import { editChannelMessage, escapeHtml } from "./telegram.js";
 
 const HELP = `🤖 Admin buyruqlari:
 
 /holat — joriy sozlamalar va keyingi post vaqti
 /post — hoziroq bitta post qo'yish
 /mavzu <matn> — mavzu bo'yicha post (avval ko'rsatib, tasdiqlatadi)
+/tahrir <matn> — oxirgi yuborilgan postni tahrirlash
 /pauza — jadvalni to'xtatish
 /davom — jadvalni davom ettirish
 
@@ -64,16 +66,20 @@ export function startAdminBot(store: StateStore): Bot {
 
   // Tasdiq kutayotgan tayyor postlar (token -> post). 10 daqiqadan keyin o'chadi.
   const pending = new Map<string, PreparedPost>();
+  // Tahrir matnini kutayotgan admin (userId -> token).
+  const awaitingEdit = new Map<number, string>();
   let tokenCounter = 0;
 
-  /** Postni ko'rsatib, "✅ Yuborish / ❌ Bekor" tugmalari bilan tasdiq so'raydi. */
+  /** Postni ko'rsatib, "✅ Yuborish / ❌ Bekor / ✏️ Tahrir" tugmalari bilan tasdiq so'raydi. */
   const presentPreview = (ctx: Context, p: PreparedPost) => {
     const token = String(++tokenCounter);
     pending.set(token, p);
     setTimeout(() => pending.delete(token), 10 * 60 * 1000);
     const kb = new InlineKeyboard()
       .text("✅ Yuborish", `send:${token}`)
-      .text("❌ Bekor", `cancel:${token}`);
+      .text("❌ Bekor", `cancel:${token}`)
+      .row()
+      .text("✏️ Tahrir", `edit:${token}`);
     return ctx.reply(`👀 <b>Ko'rib chiqing (hali yuborilmadi):</b>\n\n${p.text}`, {
       parse_mode: "HTML",
       reply_markup: kb,
@@ -112,6 +118,22 @@ export function startAdminBot(store: StateStore): Bot {
     try {
       const p = await prepareTopic(store, topic);
       return presentPreview(ctx, p);
+    } catch (err) {
+      return ctx.reply(`❌ ${(err as Error).message}`);
+    }
+  });
+
+  // Yuborilgan (oxirgi) postni tahrirlash
+  bot.command("tahrir", async (ctx) => {
+    const text = (ctx.match ?? "").trim();
+    if (!text) return ctx.reply("❌ Yangi matnni yozing:\n/tahrir <to'g'rilangan to'liq matn>");
+    const mid = store.getSetting("last_message_id");
+    if (!mid) return ctx.reply("❌ Tahrirlash uchun post topilmadi (hali post yo'q).");
+    const sig = effective(store).signature;
+    const full = escapeHtml(text) + (sig ? `\n\n${escapeHtml(sig)}` : "");
+    try {
+      await editChannelMessage(parseInt(mid, 10), full);
+      return ctx.reply("✅ Oxirgi post tahrirlandi.");
     } catch (err) {
       return ctx.reply(`❌ ${(err as Error).message}`);
     }
@@ -271,6 +293,37 @@ Misol:
     pending.delete(ctx.match[1]);
     await ctx.answerCallbackQuery("Bekor qilindi");
     await ctx.editMessageText("❌ Bekor qilindi — hech narsa yuborilmadi.");
+  });
+
+  // "✏️ Tahrir" bosilganда — admin yangi matn yuborishini kutadi.
+  bot.callbackQuery(/^edit:(.+)$/, async (ctx) => {
+    const token = ctx.match[1];
+    if (!pending.has(token)) {
+      await ctx.answerCallbackQuery("Muddati o'tgan");
+      return ctx.editMessageText("⌛ Bu taklif eskirgan — qaytadan buyruq bering.");
+    }
+    if (ctx.from) {
+      awaitingEdit.set(ctx.from.id, token);
+      setTimeout(() => awaitingEdit.delete(ctx.from!.id), 10 * 60 * 1000);
+    }
+    await ctx.answerCallbackQuery();
+    return ctx.reply("✏️ To'g'rilangan to'liq matnni yuboring (imzo avtomatik qo'shiladi):");
+  });
+
+  // Tahrir rejimidaги admin yuborgan matn — postни yangilab, qayta ko'rsatadi.
+  bot.on("message:text", async (ctx) => {
+    const uid = ctx.from?.id;
+    if (uid === undefined) return;
+    const token = awaitingEdit.get(uid);
+    if (!token) return; // tahrir kutilmayapti — oddiy matn, e'tiborsiz
+    awaitingEdit.delete(uid);
+    const p = pending.get(token);
+    if (!p) return ctx.reply("⌛ Taklif eskirgan — qaytadan buyruq bering.");
+    const sig = effective(store).signature;
+    p.text = escapeHtml(ctx.message.text) + (sig ? `\n\n${escapeHtml(sig)}` : "");
+    pending.set(token, p);
+    await ctx.reply("✅ Matn yangilandi. Qaytadan ko'rib chiqing:");
+    return presentPreview(ctx, p);
   });
 
   bot.catch((err) => console.error("[admin-bot] xato:", err.message));

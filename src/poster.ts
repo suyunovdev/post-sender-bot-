@@ -26,9 +26,10 @@ export interface PreparedPost {
 // (rejalashtiruvchi va /post buyrug'i to'qnashmasin).
 let running = false;
 
-/** Tayyorlangan postni kanalga yuboradi va bazaga belgilaydi. */
+/** Tayyorlangan postni kanalga yuboradi, message_id ni saqlaydi va belgilaydi. */
 export async function publishPrepared(store: StateStore, p: PreparedPost): Promise<void> {
-  await publish(p.text, p.imageUrl);
+  const id = await publish(p.text, p.imageUrl);
+  if (id) store.setSetting("last_message_id", String(id));
   store.markPosted(p.markId, p.source, p.title);
 }
 
@@ -99,9 +100,15 @@ export async function runOnce(store: StateStore, opts: { max?: number } = {}): P
     const lines: string[] = [];
     let sent = 0;
 
+    // Yuboradi + oxirgi message_id ni saqlaydi (chatда /tahrir uchun).
+    const pub = async (text: string, img?: string): Promise<void> => {
+      const id = await publish(text, img);
+      if (id) store.setSetting("last_message_id", String(id));
+    };
+
     const postOriginal = async (n: number): Promise<string> => {
       const post = await generateOriginal(store.recentTitles("Original", 15), n);
-      await publish(formatMessage(post, undefined, sig));
+      await pub(formatMessage(post, undefined, sig));
       store.markPosted(`original:${Date.now()}`, "Original", post.title);
       return post.title;
     };
@@ -111,7 +118,7 @@ export async function runOnce(store: StateStore, opts: { max?: number } = {}): P
       const project = projects[store.countBySource("Project") % projects.length];
       const post = await generateProjectPost(project, store.recentTitles("Project", 15), n);
       const link = project.url ? { url: project.url, label: `🌐 ${project.name}` } : undefined;
-      await publish(formatMessage(post, link, sig));
+      await pub(formatMessage(post, link, sig));
       store.markPosted(`project:${Date.now()}`, "Project", post.title);
       return `${post.title} (${project.name})`;
     };
@@ -134,7 +141,7 @@ export async function runOnce(store: StateStore, opts: { max?: number } = {}): P
           if (item) {
             const post = await rewrite(item);
             const link = { url: item.link, label: `🔗 Manba: ${item.source}` };
-            await publish(formatMessage(post, link, sig), item.imageUrl);
+            await pub(formatMessage(post, link, sig), item.imageUrl);
             store.markPosted(item.id, item.source, item.title);
             lines.push(`✅ RSS #${nextSeq}: ${post.title} (${item.source})`);
           } else {

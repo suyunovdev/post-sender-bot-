@@ -3,7 +3,7 @@ import type { RewrittenPost } from "./rewrite.js";
 
 const API = `https://api.telegram.org/bot${config.telegramBotToken}`;
 
-function escapeHtml(s: string): string {
+export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
@@ -39,6 +39,7 @@ export function formatMessage(
 interface TelegramResponse {
   ok: boolean;
   description?: string;
+  result?: { message_id?: number };
 }
 
 async function call(method: string, body: Record<string, unknown>): Promise<TelegramResponse> {
@@ -55,7 +56,7 @@ async function call(method: string, body: Record<string, unknown>): Promise<Tele
  * aks holda oddiy matn sifatida. Rasm yuborish muvaffaqiyatsiz bo'lsa,
  * matnga qaytadi.
  */
-export async function publish(text: string, imageUrl?: string): Promise<void> {
+export async function publish(text: string, imageUrl?: string): Promise<number | undefined> {
   const canUsePhoto = config.sendImages && imageUrl && text.length <= 1024;
 
   if (canUsePhoto) {
@@ -65,7 +66,7 @@ export async function publish(text: string, imageUrl?: string): Promise<void> {
       caption: text,
       parse_mode: "HTML",
     });
-    if (r.ok) return;
+    if (r.ok) return r.result?.message_id;
     console.warn(`[telegram] sendPhoto muvaffaqiyatsiz (${r.description}); matnga o'tilyapti`);
   }
 
@@ -78,6 +79,33 @@ export async function publish(text: string, imageUrl?: string): Promise<void> {
   if (!r.ok) {
     throw new Error(`Telegram sendMessage xatosi: ${r.description}`);
   }
+  return r.result?.message_id;
+}
+
+/**
+ * Kanaldagi mavjud postni tahrirlaydi (message_id bo'yicha).
+ * Rasm posti bo'lsa — caption'ni tahrirlaydi.
+ */
+export async function editChannelMessage(messageId: number, text: string): Promise<void> {
+  const r = await call("editMessageText", {
+    chat_id: config.telegramChannelId,
+    message_id: messageId,
+    text,
+    parse_mode: "HTML",
+  });
+  if (r.ok) return;
+  // Rasm/caption posti bo'lsa — editMessageCaption bilan qayta urinish
+  if (r.description && /no text in the message|caption/i.test(r.description)) {
+    const r2 = await call("editMessageCaption", {
+      chat_id: config.telegramChannelId,
+      message_id: messageId,
+      caption: text,
+      parse_mode: "HTML",
+    });
+    if (r2.ok) return;
+    throw new Error(`Tahrirlab bo'lmadi: ${r2.description}`);
+  }
+  throw new Error(`Tahrirlab bo'lmadi: ${r.description}`);
 }
 
 /** Bot va kanal sozlamalari to'g'riligini tekshirish (healthcheck). */
