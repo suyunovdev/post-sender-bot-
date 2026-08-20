@@ -83,6 +83,37 @@ export async function publish(text: string, imageUrl?: string): Promise<number |
 }
 
 /**
+ * Generatsiya qilingan rasmni (baytlar) post bilan yuboradi.
+ * Matn ≤1024 bo'lsa — rasm + caption (bitta xabar).
+ * Uzun bo'lsa — avval rasm, keyin matn (alohida xabar; message_id — matnники).
+ */
+export async function publishPhotoBytes(text: string, image: Buffer): Promise<number | undefined> {
+  const form = new FormData();
+  form.append("chat_id", config.telegramChannelId);
+  form.append("photo", new Blob([new Uint8Array(image)], { type: "image/png" }), "post.png");
+
+  const short = text.length <= 1024;
+  if (short) {
+    form.append("caption", text);
+    form.append("parse_mode", "HTML");
+  }
+  const res = await fetch(`${API}/sendPhoto`, { method: "POST", body: form });
+  const r = (await res.json()) as TelegramResponse;
+  if (!r.ok) throw new Error(`Telegram sendPhoto xatosi: ${r.description}`);
+  if (short) return r.result?.message_id;
+
+  // Uzun post — matnни alohida yuboramiz (tahrirlash uchun shu message_id qaytadi)
+  const r2 = await call("sendMessage", {
+    chat_id: config.telegramChannelId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: false,
+  });
+  if (!r2.ok) throw new Error(`Telegram sendMessage xatosi: ${r2.description}`);
+  return r2.result?.message_id;
+}
+
+/**
  * Kanaldagi mavjud postni tahrirlaydi (message_id bo'yicha).
  * Rasm posti bo'lsa — caption'ni tahrirlaydi.
  */

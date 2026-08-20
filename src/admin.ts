@@ -18,6 +18,7 @@ const HELP = `🤖 Admin buyruqlari:
 /jadval <10:00 19:00> — post vaqtlari (Toshkent)
 /navbat <rss,rss,original,project> — kontent navbati
 /soni <n> — bir ishда nechta post
+/rasm on|off — postlarга AI rasm qo'shish
 
 /manbalar — RSS manbalar ro'yxati
 /manba_qosh <Nom> <url> — RSS manba qo'shish
@@ -80,7 +81,10 @@ export function startAdminBot(store: StateStore): Bot {
       .text("❌ Bekor", `cancel:${token}`)
       .row()
       .text("✏️ Tahrir", `edit:${token}`);
-    return ctx.reply(`👀 <b>Ko'rib chiqing (hali yuborilmadi):</b>\n\n${p.text}`, {
+    const imgNote = effective(store).images
+      ? "\n\n🖼 <i>Yuborilганда mos rasm ham qo'shiladi.</i>"
+      : "";
+    return ctx.reply(`👀 <b>Ko'rib chiqing (hali yuborilmadi):</b>\n\n${p.text}${imgNote}`, {
       parse_mode: "HTML",
       reply_markup: kb,
       link_preview_options: { is_disabled: true },
@@ -98,6 +102,7 @@ export function startAdminBot(store: StateStore): Bot {
       `Bir ishда: ${s.maxPerRun} post`,
       `Navbat: ${s.pattern.join(", ")}`,
       `Imzo: ${s.signature || "(yo'q)"}`,
+      `Rasm: ${s.images ? "🖼 yoqilgan" : "o'chirilgan"}`,
       `Manbalar: ${store.listSources().length} ta · Loyihalar: ${store.listProjects().length} ta`,
     ].join("\n");
     return ctx.reply(msg);
@@ -171,6 +176,19 @@ export function startAdminBot(store: StateStore): Bot {
     }
     store.setSetting("pattern", pattern.join(","));
     return ctx.reply(`✅ Navbat: ${pattern.join(", ")}`);
+  });
+
+  bot.command("rasm", (ctx) => {
+    const v = (ctx.match ?? "").trim().toLowerCase();
+    if (v !== "on" && v !== "off") {
+      return ctx.reply("❌ /rasm on  yoki  /rasm off");
+    }
+    store.setSetting("images", v === "on" ? "1" : "0");
+    return ctx.reply(
+      v === "on"
+        ? "✅ Rasm generatsiya YOQILDI — postlarга AI rasm qo'shiladi."
+        : "✅ Rasm generatsiya O'CHIRILDI — postlar matn ko'rinishда."
+    );
   });
 
   bot.command("soni", (ctx) => {

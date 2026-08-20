@@ -3,8 +3,14 @@ import { fetchAll } from "./rss.js";
 import { rewrite } from "./rewrite.js";
 import { generateOriginal, generateOnTopic } from "./original.js";
 import { generateProjectPost } from "./projects.js";
-import { formatMessage, publish } from "./telegram.js";
+import { formatMessage, publish, publishPhotoBytes } from "./telegram.js";
+import { generateImage } from "./image.js";
 import { effective, type SlotType } from "./settings.js";
+
+/** "(Loyiha nomi)" qo'shimchasini olib tashlaydi — rasm mavzusi uchun. */
+function imageSubject(title: string): string {
+  return title.replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -28,7 +34,12 @@ let running = false;
 
 /** Tayyorlangan postni kanalga yuboradi, message_id ni saqlaydi va belgilaydi. */
 export async function publishPrepared(store: StateStore, p: PreparedPost): Promise<void> {
-  const id = await publish(p.text, p.imageUrl);
+  let id: number | undefined;
+  if (effective(store).images && !p.imageUrl) {
+    const img = await generateImage(imageSubject(p.title));
+    if (img) id = await publishPhotoBytes(p.text, img);
+  }
+  if (id === undefined) id = await publish(p.text, p.imageUrl);
   if (id) store.setSetting("last_message_id", String(id));
   store.markPosted(p.markId, p.source, p.title);
 }
@@ -101,14 +112,32 @@ export async function runOnce(store: StateStore, opts: { max?: number } = {}): P
     let sent = 0;
 
     // Yuboradi + oxirgi message_id ni saqlaydi (chatда /tahrir uchun).
-    const pub = async (text: string, img?: string): Promise<void> => {
-      const id = await publish(text, img);
+    const setLast = (id?: number) => {
       if (id) store.setSetting("last_message_id", String(id));
+    };
+
+    /**
+     * Rasm bilan yuboradi: real manba rasmи bo'lsa — o'sha; bo'lmasa va rasm
+     * yoqilgan bo'lsa — AI rasm; aks holda matn.
+     */
+    const pubMaybeImage = async (text: string, subject: string, realImg?: string): Promise<void> => {
+      if (realImg) {
+        setLast(await publish(text, realImg));
+        return;
+      }
+      if (s.images) {
+        const img = await generateImage(subject);
+        if (img) {
+          setLast(await publishPhotoBytes(text, img));
+          return;
+        }
+      }
+      setLast(await publish(text));
     };
 
     const postOriginal = async (n: number): Promise<string> => {
       const post = await generateOriginal(store.recentTitles("Original", 15), n);
-      await pub(formatMessage(post, undefined, sig));
+      await pubMaybeImage(formatMessage(post, undefined, sig), post.title);
       store.markPosted(`original:${Date.now()}`, "Original", post.title);
       return post.title;
     };
@@ -118,7 +147,7 @@ export async function runOnce(store: StateStore, opts: { max?: number } = {}): P
       const project = projects[store.countBySource("Project") % projects.length];
       const post = await generateProjectPost(project, store.recentTitles("Project", 15), n);
       const link = project.url ? { url: project.url, label: `🌐 ${project.name}` } : undefined;
-      await pub(formatMessage(post, link, sig));
+      await pubMaybeImage(formatMessage(post, link, sig), post.title);
       store.markPosted(`project:${Date.now()}`, "Project", post.title);
       return `${post.title} (${project.name})`;
     };
@@ -141,7 +170,7 @@ export async function runOnce(store: StateStore, opts: { max?: number } = {}): P
           if (item) {
             const post = await rewrite(item);
             const link = { url: item.link, label: `🔗 Manba: ${item.source}` };
-            await pub(formatMessage(post, link, sig), item.imageUrl);
+            await pubMaybeImage(formatMessage(post, link, sig), post.title, item.imageUrl);
             store.markPosted(item.id, item.source, item.title);
             lines.push(`✅ RSS #${nextSeq}: ${post.title} (${item.source})`);
           } else {

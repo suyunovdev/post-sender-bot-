@@ -9,6 +9,7 @@ export interface EffectiveSettings {
   scheduleTimes: string[]; // "HH:MM"
   maxPerRun: number;
   paused: boolean;
+  images: boolean;
 }
 
 export function parsePattern(input: string): SlotType[] {
@@ -42,5 +43,6 @@ export function effective(store: StateStore): EffectiveSettings {
     scheduleTimes: times.length ? times : ["10:00", "19:00"],
     maxPerRun: Number.isFinite(max) && max > 0 ? max : 1,
     paused: store.getSetting("paused") === "1",
+    images: (store.getSetting("images") ?? (config.generateImages ? "1" : "0")) === "1",
   };
 }

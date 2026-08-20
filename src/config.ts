@@ -36,6 +36,10 @@ export const config = {
   geminiApiKey: required("GEMINI_API_KEY"),
   /** Gemini modeli. `gemini-flash-latest` — har doim eng so'nggi barqaror flash. */
   geminiModel: optional("GEMINI_MODEL", "gemini-flash-latest"),
+  /** Rasm generatsiya modeli (Nano Banana). */
+  geminiImageModel: optional("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image"),
+  /** Postlarга AI rasm generatsiya qilinsinmi (standart). Chatда /rasm bilan o'zgartiriladi. */
+  generateImages: optional("GENERATE_IMAGES", "1") === "1",
   maxPostsPerRun: parseInt(optional("MAX_POSTS_PER_RUN", "3"), 10),
   dbPath: optional("DB_PATH", "./data/state.sqlite"),
   postLang: optional("POST_LANG", "uz"),
