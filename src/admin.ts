@@ -14,7 +14,7 @@ import {
 import { editChannelMessage, escapeHtml } from "./telegram.js";
 import { parseLevel, LEVEL_META, type Level } from "./challenge.js";
 
-const PROJECT_INPUT_HELP = `➕ Yangi loyiha — quyidagi formatда yuboring (| bilan ajrating):
+const PROJECT_INPUT_HELP = `➕ Yangi loyiha — quyidagi formatda yuboring (| bilan ajrating):
 
 Nom | qisqa ta'rif | url | to'liq tavsif | imkoniyat1; imkoniyat2 | tex1, tex2
 
@@ -30,7 +30,7 @@ const PROMPTS: Record<string, string> = {
   imzo: "✍️ Yangi imzoni yuboring (imzosiz bo'lishi uchun bitta \"-\" yuboring):",
   jadval: "🕐 Post vaqtlarini yuboring (masalan: 10:00 19:00):",
   navbat: "🔀 Navbatni yuboring (turlar: rss, original, project — masalan: rss,rss,original,project):",
-  soni: "🔢 Bir ishда nechta post? (1-10):",
+  soni: "🔢 Bir ishda nechta post? (1-10):",
   manba_qosh: "📡 Manba: Nom va url (masalan: TechCrunch https://techcrunch.com/feed/):",
   loyiha_qosh: PROJECT_INPUT_HELP,
   ch_kun: "📆 Qaysi kun? (1-30):",
@@ -85,7 +85,7 @@ export function startAdminBot(store: StateStore): Bot {
     }, 10 * 60 * 1000);
   };
 
-  // ---- Amal-yordamchilari (slash va tugмалар — ikkalasi ham shularни chaqiradi) ----
+  // ---- Amal-yordamchilari (slash va tugmalar — ikkalasi ham shularni chaqiradi) ----
   const applyImzo = (text: string): string => {
     const v = text === "-" ? "" : text;
     store.setSetting("signature", v);
@@ -107,7 +107,7 @@ export function startAdminBot(store: StateStore): Bot {
     const n = parseInt(text, 10);
     if (!Number.isFinite(n) || n < 1 || n > 10) return "❌ 1 dan 10 gacha son yuboring.";
     store.setSetting("max_per_run", String(n));
-    return `✅ Bir ishда ${n} ta post qo'yiladi.`;
+    return `✅ Bir ishda ${n} ta post qo'yiladi.`;
   };
   const applyManbaQosh = (text: string): string => {
     const parts = text.split(/\s+/);
@@ -138,7 +138,7 @@ export function startAdminBot(store: StateStore): Bot {
   };
   const applyChKun = (text: string): string => {
     const n = parseInt(text, 10);
-    if (!Number.isFinite(n) || n < 1 || n > 30) return "❌ 1-30 orasида kun yuboring.";
+    if (!Number.isFinite(n) || n < 1 || n > 30) return "❌ 1-30 orasida kun yuboring.";
     store.setSetting("challenge_day", String(n));
     return `✅ Joriy kun: ${n}/30`;
   };
@@ -164,7 +164,7 @@ export function startAdminBot(store: StateStore): Bot {
       `📊 <b>Holat:</b> ${s.paused ? "⏸ to'xtatilgan" : "▶️ faol"}`,
       `🕐 Jadval: ${s.scheduleTimes.join(", ")} (Toshkent)`,
       `⏭ Keyingi: ${s.paused ? "—" : nextFireLabel(s.scheduleTimes)}`,
-      `🔢 Bir ishда: ${s.maxPerRun} post`,
+      `🔢 Bir ishda: ${s.maxPerRun} post`,
       `🔀 Navbat: ${s.pattern.join(", ")}`,
       `✍️ Imzo: ${escapeHtml(s.signature || "(yo'q)")}`,
       `🖼 Rasm: ${s.images ? "yoqilgan" : "o'chirilgan"}`,
@@ -249,14 +249,14 @@ export function startAdminBot(store: StateStore): Bot {
       case "proj": return { text: "🚀 <b>Loyihalar</b>", kb: projKb() };
       case "src": return { text: "📡 <b>Manbalar</b>", kb: srcKb() };
       case "ch": return { text: "📅 <b>30 kunlik JS Challenge</b>", kb: chKb() };
-      case "ch_level": return { text: "🎚 <b>Darajani tanlang</b>\n(o'quvchilarга shu darajада ketadi)", kb: levelKb() };
+      case "ch_level": return { text: "🎚 <b>Darajani tanlang</b>\n(o'quvchilarga shu darajada ketadi)", kb: levelKb() };
       case "holat": return { text: statusText(), kb: backKb("main") };
       case "ch_holat": return { text: challengeStatusText(), kb: backKb("ch") };
       case "proj_list": return { text: projectListText(), kb: backKb("proj") };
       case "src_list": return { text: sourceListText(), kb: backKb("src") };
       case "proj_post": return { text: "📤 <b>Qaysi loyiha posti?</b>", kb: listKb(store.listProjects(), "pp", "proj") };
-      case "proj_del": return { text: "🗑 <b>Qaysi loyihани o'chirish?</b>", kb: listKb(store.listProjects(), "pd", "proj") };
-      case "src_del": return { text: "🗑 <b>Qaysi manbани o'chirish?</b>", kb: listKb(store.listSources(), "sd", "src") };
+      case "proj_del": return { text: "🗑 <b>Qaysi loyihani o'chirish?</b>", kb: listKb(store.listProjects(), "pd", "proj") };
+      case "src_del": return { text: "🗑 <b>Qaysi manbani o'chirish?</b>", kb: listKb(store.listSources(), "sd", "src") };
       default: return { text: "🤖 <b>Boshqaruv paneli</b>\nKerakli bo'limni tanlang:", kb: mainKb() };
     }
   };
@@ -283,7 +283,7 @@ export function startAdminBot(store: StateStore): Bot {
       .text("❌ Bekor", `cancel:${token}`)
       .row()
       .text("✏️ Tahrir", `edit:${token}`);
-    const imgNote = effective(store).images ? "\n\n🖼 <i>Yuborilганда mos rasm ham qo'shiladi.</i>" : "";
+    const imgNote = effective(store).images ? "\n\n🖼 <i>Yuborilganda mos rasm ham qo'shiladi.</i>" : "";
     return ctx.reply(`👀 <b>Ko'rib chiqing (hali yuborilmadi):</b>\n\n${p.text}${imgNote}`, {
       parse_mode: "HTML",
       reply_markup: kb,
@@ -291,7 +291,7 @@ export function startAdminBot(store: StateStore): Bot {
     });
   };
 
-  // ==== Buyruqlar (tugмалар bilan bir xil ishlaydi) ====
+  // ==== Buyruqlar (tugmalar bilan bir xil ishlaydi) ====
   bot.command(["start", "menu"], (ctx) => sendScreen(ctx, "main"));
   bot.command("holat", (ctx) => sendScreen(ctx, "holat"));
   bot.command("post", async (ctx) => {
@@ -517,7 +517,7 @@ export function startAdminBot(store: StateStore): Bot {
     await ctx.answerCallbackQuery();
   });
 
-  // ==== Matn kutilганда (tugмалар so'ragan qiymat) ====
+  // ==== Matn kutilganda (tugmalar so'ragan qiymat) ====
   bot.on("message:text", async (ctx) => {
     const uid = ctx.from?.id;
     if (uid === undefined) return;

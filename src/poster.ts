@@ -47,8 +47,8 @@ export async function publishPrepared(store: StateStore, p: PreparedPost): Promi
 }
 
 /**
- * Joriy challenge kунини tanlangan darajада kanalга yuboradi va keyingi kунга o'tadi.
- * Bir kунда faqat bir marta (challenge_posted_date bilan nazorat).
+ * Joriy challenge kunini tanlangan darajada kanalga yuboradi va keyingi kunga o'tadi.
+ * Bir kunda faqat bir marta (challenge_posted_date bilan nazorat).
  */
 export async function postChallengeAndAdvance(
   store: StateStore
@@ -66,7 +66,7 @@ export async function postChallengeAndAdvance(
     const text = buildChallengePost(entry, cs.level, s.signature);
     let id: number | undefined;
     if (s.images) {
-      // Challenge uchun umumiy AI illyustratsiya emas — mavzuга oid kod-kartочка
+      // Challenge uchun umumiy AI illyustratsiya emas — mavzuga oid kod-kartochka
       const code = challengeCode(cs.day);
       const img = code ? renderCodeImage(code, { title: `Kun ${cs.day} · ${entry.topic}` }) : null;
       if (img) id = await publishPhotoBytes(text, img);
@@ -84,7 +84,7 @@ export async function postChallengeAndAdvance(
   }
 }
 
-/** Joriy challenge kунини matn ko'rinishда qaytaradi (DM preview — yubormaydi). */
+/** Joriy challenge kunini matn ko'rinishda qaytaradi (DM preview — yubormaydi). */
 export function challengePreviewText(store: StateStore): string {
   const s = effective(store);
   const cs = challengeState(store);
@@ -139,7 +139,7 @@ export async function prepareProject(store: StateStore, id: number): Promise<Pre
 
 /**
  * Bir "ish" — pattern navbatiga qarab `max` (yoki sozlamadagi) tagacha post qo'yadi.
- * Manbalar, loyihalar, imzo va navbat — hammasi BAZADAN o'qiladi (chatдан tahrirlangan).
+ * Manbalar, loyihalar, imzo va navbat — hammasi BAZADAN o'qiladi (chatdan tahrirlangan).
  */
 export async function runOnce(store: StateStore, opts: { max?: number } = {}): Promise<RunResult> {
   if (running) return { sent: 0, lines: ["⏳ Avvalgi post hali tugamadi — o'tkazib yuborildi."] };
@@ -160,13 +160,13 @@ export async function runOnce(store: StateStore, opts: { max?: number } = {}): P
     const lines: string[] = [];
     let sent = 0;
 
-    // Yuboradi + oxirgi message_id ni saqlaydi (chatда /tahrir uchun).
+    // Yuboradi + oxirgi message_id ni saqlaydi (chatda /tahrir uchun).
     const setLast = (id?: number) => {
       if (id) store.setSetting("last_message_id", String(id));
     };
 
     /**
-     * Rasm bilan yuboradi: real manba rasmи bo'lsa — o'sha; bo'lmasa va rasm
+     * Rasm bilan yuboradi: real manba rasmi bo'lsa — o'sha; bo'lmasa va rasm
      * yoqilgan bo'lsa — AI rasm; aks holda matn.
      */
     const pubMaybeImage = async (text: string, subject: string, realImg?: string): Promise<void> => {

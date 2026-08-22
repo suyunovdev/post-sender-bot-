@@ -16,7 +16,7 @@ try {
   GlobalFonts.registerFromPath(fontPath("JetBrainsMono-Regular.ttf"), FONT);
   GlobalFonts.registerFromPath(fontPath("JetBrainsMono-Bold.ttf"), FONT_BOLD);
 } catch (err) {
-  console.error("[codeimage] font ro'yxatдан o'tmadi:", (err as Error).message);
+  console.error("[codeimage] font ro'yxatdan o'tmadi:", (err as Error).message);
 }
 
 // One Dark uslubidagi ranglar
@@ -47,7 +47,7 @@ interface Tok {
   c: string;
 }
 
-/** Bitta qatorni ranglangan bo'laklarга ajratadi (oddiy JS tokenizer). */
+/** Bitta qatorni ranglangan bo'laklarga ajratadi (oddiy JS tokenizer). */
 function tokenize(line: string): Tok[] {
   const out: Tok[] = [];
   let i = 0;
@@ -92,8 +92,8 @@ function truncate(s: string, max: number): string {
 }
 
 /**
- * Kod bo'lagini syntax-rangли "kod oynasi" (Carbon uslubida) PNG rasm qilib chizadi.
- * Xato bo'lsa null qaytaradi (chaqiruvchi matn-only postга tushadi).
+ * Kod bo'lagini syntax-rangli "kod oynasi" (Carbon uslubida) PNG rasm qilib chizadi.
+ * Xato bo'lsa null qaytaradi (chaqiruvchi matn-only postga tushadi).
  */
 export function renderCodeImage(code: string, opts: { title?: string } = {}): Buffer | null {
   try {
@@ -109,7 +109,7 @@ export function renderCodeImage(code: string, opts: { title?: string } = {}): Bu
     const lines = src.split("\n");
     while (lines.length > 1 && lines[lines.length - 1].trim() === "") lines.pop();
 
-    // O'lchash (monospace — barcha belgilar bir xil kenglик)
+    // O'lchash (monospace — barcha belgilar bir xil kenglik)
     const mctx = createCanvas(10, 10).getContext("2d");
     mctx.font = `${FS}px "${FONT}"`;
     const cw = mctx.measureText("M").width || FS * 0.6;

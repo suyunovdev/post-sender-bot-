@@ -30,7 +30,7 @@ async function main(): Promise<void> {
   });
 
   const store = new StateStore(config.dbPath);
-  // Manbalar/loyihalarni koddan bazaga bir marta ko'chirish (keyin chatдан tahrirlanadi).
+  // Manbalar/loyihalarni koddan bazaga bir marta ko'chirish (keyin chatdan tahrirlanadi).
   store.seedIfEmpty(SOURCES, PROJECTS);
 
   // Admin-bot (buyruqlar tinglaydi)
@@ -84,7 +84,7 @@ async function main(): Promise<void> {
   const s = effective(store);
   console.log(
     `[service] ishga tushdi. Jadval: ${s.scheduleTimes.join(", ")} (Toshkent), ` +
-      `bir ishда ${s.maxPerRun} post. Admin: ${config.adminUserIds.join(", ")}`
+      `bir ishda ${s.maxPerRun} post. Admin: ${config.adminUserIds.join(", ")}`
   );
 }
 

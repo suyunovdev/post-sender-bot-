@@ -46,7 +46,7 @@ export class StateStore {
     `);
   }
 
-  // ---- Sozlamalar (key/value) — chatдан o'zgartiriladi ----
+  // ---- Sozlamalar (key/value) — chatdan o'zgartiriladi ----
   getSetting(key: string): string | undefined {
     const row = this.db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as
       | { value: string }

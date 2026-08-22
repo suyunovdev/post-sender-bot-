@@ -67,7 +67,7 @@ export const PROJECTS: Project[] = [
     description:
       "O'quv va ta'lim markazlarini boshqarish uchun CRM. Filiallar, guruhlar, o'quvchilar, ota-onalar, davomat, to'lovlar va potentsial mijozlar (lidlar) — hammasi bitta joyda. Har bir markaz o'z brendi bilan ishlatishi mumkin (white-label). Bir bosishda sinab ko'riladigan demo mavjud.",
     highlights: [
-      "Bir necha filialни boshqarish — har filial ma'lumoti alohida izolyatsiya qilingan",
+      "Bir necha filialni boshqarish — har filial ma'lumoti alohida izolyatsiya qilingan",
       "Guruhlar, dars jadvali va davomat kuzatuvi",
       "O'quvchilar va ota-onalar bilan ishlash, to'lovlar hisobi",
       "Lidlar (potentsial mijozlar) — CRM voronkasi",
@@ -93,7 +93,7 @@ export const PROJECTS: Project[] = [
     tech: ["Next.js 16", "TypeScript", "Prisma", "PostgreSQL"],
   },
 
-  // --- Boshqa loyihalaringizni shu shaklда qo'shing ---
+  // --- Boshqa loyihalaringizni shu shaklda qo'shing ---
   // {
   //   name: "...",
   //   tagline: "...",
@@ -117,7 +117,7 @@ const ANGLES: string[] = [
 ];
 
 function buildSystemPrompt(): string {
-  return `Sen quyidagi loyihaning MUALLIFISAN — o'z shaxsiy Telegram kanalingда, birinchi shaxsda (men) o'z loyihang haqida yozyapsan.
+  return `Sen quyidagi loyihaning MUALLIFISAN — o'z shaxsiy Telegram kanalingda, birinchi shaxsda (men) o'z loyihang haqida yozyapsan.
 
 Uslub qoidalari:
 - Birinchi shaxsda, tabiiy va samimiy: "men yaratdim", "ustida ishlayapman", "qo'shdim".
@@ -127,14 +127,15 @@ Uslub qoidalari:
 - Oxirida yumshoq chaqiruv (sinab ko'ring / fikr bildiring), lekin bosim o'tkazma.
 - Emoji me'yorida (0-2 ta).
 - Havolani matn ichida takrorlama — u alohida qo'shiladi.
-- 3-5 ta mavzuga mos hashtag ber (# belgisisiz), loyiha nomini ham qo'shsang bo'ladi.`;
+- 3-5 ta mavzuga mos hashtag ber (# belgisisiz), loyiha nomini ham qo'shsang bo'ladi.
+- MUHIM: faqat o'zbek LOTIN yozuvi. Kirill harflarini MUTLAQO ishlatma. Masalan "da","ga","ning","ichida" deb yoz — hech qachon "да","га","нинг" emas.`;
 }
 
 /**
  * Bitta loyiha haqida post yozadi.
  * @param project       Loyiha ma'lumoti.
  * @param recentTitles  Yaqindagi loyiha postlari sarlavhalari (takrorlamaslik).
- * @param seq           Global navbat raqami — post burchagini tanlashда ishlatiladi.
+ * @param seq           Global navbat raqami — post burchagini tanlashda ishlatiladi.
  */
 export async function generateProjectPost(
   project: Project,

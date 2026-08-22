@@ -34,7 +34,8 @@ Uslub qoidalari:
 - Sarlavha clickbait bo'lmasin, lekin qiziqtirsin.
 - Emoji me'yorida (0-2 ta), faqat joyiga tushsa.
 - Faktlarni o'ylab topma. Aniq bilmagan raqam/sanani yozma; umumiy, lekin to'g'ri gapir.
-- 3-5 ta mavzuga mos hashtag ber (# belgisisiz).`;
+- 3-5 ta mavzuga mos hashtag ber (# belgisisiz).
+- MUHIM: faqat o'zbek LOTIN yozuvi. Kirill harflarini MUTLAQO ishlatma. Masalan "da","ga","ning","ichida" deb yoz — hech qachon "да","га","нинг" emas.`;
 }
 
 /**
@@ -50,7 +51,7 @@ export async function generateOriginal(
 
   const avoidBlock =
     recentTitles.length > 0
-      ? `\n\nYaqinda quyidagi mavzularда post chiqqan — ularni TAKRORLAMA, boshqa g'oya top:\n${recentTitles
+      ? `\n\nYaqinda quyidagi mavzularda post chiqqan — ularni TAKRORLAMA, boshqa g'oya top:\n${recentTitles
           .map((t) => `- ${t}`)
           .join("\n")}`
       : "";
@@ -67,8 +68,8 @@ Kanal mavzusi doirasida shu turdagi bitta original post yoz.${avoidBlock}`;
 }
 
 /**
- * Admin bergan aniq MAVZU bo'yicha bitta original post yozadi (chatда /mavzu ...).
- * Kanal mavzusi doirasida bo'lmasa ham, aynan shu mavzuда yozadi.
+ * Admin bergan aniq MAVZU bo'yicha bitta original post yozadi (chatda /mavzu ...).
+ * Kanal mavzusi doirasida bo'lmasa ham, aynan shu mavzuda yozadi.
  */
 export async function generateOnTopic(topic: string): Promise<RewrittenPost> {
   const lang = LANG_NAME[config.postLang] ?? "o'zbek";

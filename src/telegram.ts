@@ -85,7 +85,7 @@ export async function publish(text: string, imageUrl?: string): Promise<number |
 /**
  * Generatsiya qilingan rasmni (baytlar) post bilan yuboradi.
  * Matn ≤1024 bo'lsa — rasm + caption (bitta xabar).
- * Uzun bo'lsa — avval rasm, keyin matn (alohida xabar; message_id — matnники).
+ * Uzun bo'lsa — avval rasm, keyin matn (alohida xabar; message_id — matnniki).
  */
 export async function publishPhotoBytes(text: string, image: Buffer): Promise<number | undefined> {
   const form = new FormData();
@@ -102,7 +102,7 @@ export async function publishPhotoBytes(text: string, image: Buffer): Promise<nu
   if (!r.ok) throw new Error(`Telegram sendPhoto xatosi: ${r.description}`);
   if (short) return r.result?.message_id;
 
-  // Uzun post — matnни alohida yuboramiz (tahrirlash uchun shu message_id qaytadi)
+  // Uzun post — matnni alohida yuboramiz (tahrirlash uchun shu message_id qaytadi)
   const r2 = await call("sendMessage", {
     chat_id: config.telegramChannelId,
     text,
