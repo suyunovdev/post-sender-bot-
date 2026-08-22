@@ -306,6 +306,48 @@ export const CHALLENGE: ChallengeDay[] = [
   },
 ];
 
+/**
+ * Har kun uchun mavzuга oid MISOL kod (vazifа javobи EMAS — sintaksisни o'rgatadi).
+ * Kod-kartochка rasm sifatida chiziladi (src/codeimage.ts).
+ */
+const CODE_EXAMPLES: Record<number, string> = {
+  1: `console.log("Salom, dunyo!");`,
+  2: `const ism = "Ali";\nlet yosh = 20;\nconsole.log(ism, yosh);`,
+  3: `let a = 7 % 3; // 1\nconsole.log(typeof a); // "number"`,
+  4: `let yosh = 18;\nif (yosh >= 18) {\n  console.log("Voyaga yetgan");\n} else {\n  console.log("Yosh");\n}`,
+  5: `let n = 5;\nlet holat = n > 0 ? "musbat" : "manfiy";\nconsole.log(holat);`,
+  6: `for (let i = 1; i <= 3; i++) {\n  console.log(i);\n}`,
+  7: `let i = 3;\nwhile (i > 0) {\n  console.log(i);\n  i--;\n}`,
+  8: `function qoshish(a, b) {\n  return a + b;\n}\nconsole.log(qoshish(2, 3)); // 5`,
+  9: `const mevalar = ["olma", "nok"];\nmevalar.push("uzum");\nconsole.log(mevalar[0]); // "olma"`,
+  10: `const sonlar = [1, 2, 3];\nconst ikki = sonlar.map(n => n * 2);\nconsole.log(ikki); // [2, 4, 6]`,
+  11: `const user = { ism: "Ali", yosh: 20 };\nconsole.log(user.ism); // "Ali"`,
+  12: `let s = "JavaScript";\nconsole.log(s.toUpperCase());\nconsole.log(s.length); // 10`,
+  13: `let r = Math.floor(Math.random() * 100);\nconsole.log(r);`,
+  14: `try {\n  nomalum();\n} catch (e) {\n  console.log("Xato bo'ldi");\n}`,
+  15: `const el = document.querySelector("#sarlavha");\nconsole.log(el.textContent);`,
+  16: `const el = document.querySelector("h1");\nel.textContent = "Yangi matn";\nel.style.color = "red";`,
+  17: `const btn = document.querySelector("button");\nbtn.addEventListener("click", () => {\n  alert("Bosildingiz!");\n});`,
+  18: `const inp = document.querySelector("input");\nconsole.log(inp.value);`,
+  19: `localStorage.setItem("ism", "Ali");\nconst ism = localStorage.getItem("ism");\nconsole.log(ism);`,
+  20: `const box = document.querySelector(".box");\nbox.classList.toggle("active");`,
+  21: `const royxat = [];\nroyxat.push("Kod yozish");\nconsole.log(royxat);`,
+  22: `const salom = (ism) => \`Salom, \${ism}!\`;\nconsole.log(salom("Ali"));`,
+  23: `const user = { ism: "Ali", yosh: 20 };\nconst { ism, yosh } = user;\nconsole.log(ism, yosh);`,
+  24: `const p = new Promise((resolve) => {\n  setTimeout(() => resolve("Tayyor!"), 1000);\n});\np.then(natija => console.log(natija));`,
+  25: `async function main() {\n  const res = await fetch("/data");\n  console.log(res);\n}`,
+  26: `const res = await fetch("https://api.example.com/user");\nconst data = await res.json();\nconsole.log(data);`,
+  27: `const obj = { ism: "Ali" };\nconst matn = JSON.stringify(obj);\nconsole.log(matn);`,
+  28: `// index.html: input, tugma, natija joyi\nconst tugma = document.querySelector("#qidir");\nconst natija = document.querySelector("#natija");`,
+  29: `tugma.addEventListener("click", async () => {\n  const res = await fetch(url);\n  const data = await res.json();\n  natija.textContent = data.value;\n});`,
+  30: `// Loyiha tayyor! 🎉\nconsole.log("30 kunlik challenge tugadi!");`,
+};
+
+/** Kun uchun misol kod (bo'lmasa undefined). */
+export function challengeCode(day: number): string | undefined {
+  return CODE_EXAMPLES[day];
+}
+
 export function challengeDay(n: number): ChallengeDay | undefined {
   return CHALLENGE.find((c) => c.day === n);
 }

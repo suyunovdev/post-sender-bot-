@@ -5,8 +5,9 @@ import { generateOriginal, generateOnTopic } from "./original.js";
 import { generateProjectPost } from "./projects.js";
 import { formatMessage, publish, publishPhotoBytes } from "./telegram.js";
 import { generateImage } from "./image.js";
+import { renderCodeImage } from "./codeimage.js";
 import { effective, challengeState, tashkentToday, type SlotType } from "./settings.js";
-import { challengeDay, buildChallengePost } from "./challenge.js";
+import { challengeDay, challengeCode, buildChallengePost } from "./challenge.js";
 
 /** "(Loyiha nomi)" qo'shimchasini olib tashlaydi — rasm mavzusi uchun. */
 function imageSubject(title: string): string {
@@ -65,7 +66,9 @@ export async function postChallengeAndAdvance(
     const text = buildChallengePost(entry, cs.level, s.signature);
     let id: number | undefined;
     if (s.images) {
-      const img = await generateImage(`JavaScript dars mavzusi: ${entry.topic}`);
+      // Challenge uchun umumiy AI illyustratsiya emas — mavzuга oid kod-kartочка
+      const code = challengeCode(cs.day);
+      const img = code ? renderCodeImage(code, { title: `Kun ${cs.day} · ${entry.topic}` }) : null;
       if (img) id = await publishPhotoBytes(text, img);
     }
     if (id === undefined) id = await publish(text);
