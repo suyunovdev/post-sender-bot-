@@ -128,7 +128,7 @@ Uslub qoidalari:
 - Emoji me'yorida (0-2 ta).
 - Havolani matn ichida takrorlama — u alohida qo'shiladi.
 - 3-5 ta mavzuga mos hashtag ber (# belgisisiz), loyiha nomini ham qo'shsang bo'ladi.
-- MUHIM: faqat o'zbek LOTIN yozuvi. Kirill harflarini MUTLAQO ishlatma. Masalan "da","ga","ning","ichida" deb yoz — hech qachon "да","га","нинг" emas.`;
+- MUHIM: faqat o'zbek LOTIN yozuvi. Kirill (rus) alifbosini MUTLAQO ishlatma — barcha so'z va qo'shimchalarni lotinda yoz (da, ga, ning, ichida, dan).`;
 }
 
 /**

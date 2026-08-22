@@ -24,7 +24,7 @@ Uslub qoidalari:
 - Umumiy "AI-shabloni" iboralaridan qoch ("Hurmatli o'quvchilar", "Xulosa qilib aytganda" kabi).
 - Emoji'lardan me'yorida foydalan (0-2 ta), joyiga tushsa.
 - 3-5 ta mavzuga mos hashtag ber (o'zbekcha yoki inglizcha, # belgisisiz).
-- MUHIM: faqat o'zbek LOTIN yozuvi. Kirill harflarini MUTLAQO ishlatma. Masalan "da","ga","ning","ichida" deb yoz — hech qachon "да","га","нинг" emas.`;
+- MUHIM: faqat o'zbek LOTIN yozuvi. Kirill (rus) alifbosini MUTLAQO ishlatma — barcha so'z va qo'shimchalarni lotinda yoz (da, ga, ning, ichida, dan).`;
 
 /**
  * Bitta yangilikni Gemini yordamida kanal uslubida qayta yozadi.
