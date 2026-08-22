@@ -1,8 +1,8 @@
 import { config, SOURCES } from "./config.js";
 import { StateStore } from "./db.js";
 import { PROJECTS } from "./projects.js";
-import { effective } from "./settings.js";
-import { runOnce } from "./poster.js";
+import { effective, challengeState, tashkentToday } from "./settings.js";
+import { runOnce, postChallengeAndAdvance } from "./poster.js";
 import { startAdminBot } from "./admin.js";
 import { notifyAdmins } from "./alerts.js";
 
@@ -38,12 +38,30 @@ async function main(): Promise<void> {
 
   // Rejalashtiruvchi — har 30s tekshiradi, mos daqiqada bir marta post qo'yadi.
   let lastFired = "";
+  let lastChallenge = "";
   setInterval(() => {
     void (async () => {
-      const s = effective(store);
-      if (s.paused) return;
       const hhmm = tashkentHHMM();
       const stamp = `${new Date().toISOString().slice(0, 10)} ${hhmm}`;
+
+      // 1) Challenge (30 kunlik) — mustaqil, /pauza ta'sir qilmaydi
+      const cs = challengeState(store);
+      if (cs.on && hhmm === cs.time && lastChallenge !== stamp && cs.postedDate !== tashkentToday()) {
+        lastChallenge = stamp;
+        console.log(`[challenge] ${hhmm} — kun ${cs.day} (${cs.level}) yuborilmoqda`);
+        try {
+          const r = await postChallengeAndAdvance(store);
+          console.log(`[challenge] ✅ ${r.label}`);
+          if (r.finished) await notifyAdmins("🎉 30 kunlik JS challenge tugadi! Tabriklaymiz.");
+        } catch (err) {
+          console.error("[challenge] xato:", (err as Error).message);
+          await notifyAdmins(`🔴 Challenge post xatosi: ${(err as Error).message}`);
+        }
+      }
+
+      // 2) Oddiy jadval
+      const s = effective(store);
+      if (s.paused) return;
       if (!s.scheduleTimes.includes(hhmm) || lastFired === stamp) return;
       lastFired = stamp;
       console.log(`[scheduler] ${hhmm} (Toshkent) — post boshlandi`);

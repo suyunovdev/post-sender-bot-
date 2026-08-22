@@ -5,7 +5,8 @@ import { generateOriginal, generateOnTopic } from "./original.js";
 import { generateProjectPost } from "./projects.js";
 import { formatMessage, publish, publishPhotoBytes } from "./telegram.js";
 import { generateImage } from "./image.js";
-import { effective, type SlotType } from "./settings.js";
+import { effective, challengeState, tashkentToday, type SlotType } from "./settings.js";
+import { challengeDay, buildChallengePost } from "./challenge.js";
 
 /** "(Loyiha nomi)" qo'shimchasini olib tashlaydi — rasm mavzusi uchun. */
 function imageSubject(title: string): string {
@@ -42,6 +43,51 @@ export async function publishPrepared(store: StateStore, p: PreparedPost): Promi
   if (id === undefined) id = await publish(p.text, p.imageUrl);
   if (id) store.setSetting("last_message_id", String(id));
   store.markPosted(p.markId, p.source, p.title);
+}
+
+/**
+ * Joriy challenge kунини tanlangan darajада kanalга yuboradi va keyingi kунга o'tadi.
+ * Bir kунда faqat bir marta (challenge_posted_date bilan nazorat).
+ */
+export async function postChallengeAndAdvance(
+  store: StateStore
+): Promise<{ label: string; finished: boolean }> {
+  if (running) throw new Error("Hozir band — biroz kuting.");
+  running = true;
+  try {
+    const s = effective(store);
+    const cs = challengeState(store);
+    const entry = challengeDay(cs.day);
+    if (!entry) {
+      store.setSetting("challenge_on", "0");
+      return { label: `Challenge tugagan (kun ${cs.day} yo'q)`, finished: true };
+    }
+    const text = buildChallengePost(entry, cs.level, s.signature);
+    let id: number | undefined;
+    if (s.images) {
+      const img = await generateImage(`JavaScript dars mavzusi: ${entry.topic}`);
+      if (img) id = await publishPhotoBytes(text, img);
+    }
+    if (id === undefined) id = await publish(text);
+    if (id) store.setSetting("last_message_id", String(id));
+    store.markPosted(`challenge:${cs.day}:${Date.now()}`, "Challenge", `Kun ${cs.day}: ${entry.topic}`);
+    store.setSetting("challenge_posted_date", tashkentToday());
+    const finished = cs.day >= 30;
+    if (finished) store.setSetting("challenge_on", "0");
+    else store.setSetting("challenge_day", String(cs.day + 1));
+    return { label: `Kun ${cs.day}: ${entry.topic} (${cs.level})`, finished };
+  } finally {
+    running = false;
+  }
+}
+
+/** Joriy challenge kунини matn ko'rinishда qaytaradi (DM preview — yubormaydi). */
+export function challengePreviewText(store: StateStore): string {
+  const s = effective(store);
+  const cs = challengeState(store);
+  const entry = challengeDay(cs.day);
+  if (!entry) return "Challenge kunlari tugagan (1-30).";
+  return buildChallengePost(entry, cs.level, s.signature);
 }
 
 /**

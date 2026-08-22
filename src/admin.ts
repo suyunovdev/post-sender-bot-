@@ -1,9 +1,18 @@
 import { Bot, InlineKeyboard, type Context } from "grammy";
 import { config } from "./config.js";
 import type { StateStore } from "./db.js";
-import { effective, parsePattern, parseTimes } from "./settings.js";
-import { runOnce, prepareTopic, prepareProject, publishPrepared, type PreparedPost } from "./poster.js";
+import { effective, parsePattern, parseTimes, challengeState, tashkentToday } from "./settings.js";
+import {
+  runOnce,
+  prepareTopic,
+  prepareProject,
+  publishPrepared,
+  postChallengeAndAdvance,
+  challengePreviewText,
+  type PreparedPost,
+} from "./poster.js";
 import { editChannelMessage, escapeHtml } from "./telegram.js";
+import { parseLevel, LEVEL_META } from "./challenge.js";
 
 const HELP = `🤖 Admin buyruqlari:
 
@@ -27,7 +36,16 @@ const HELP = `🤖 Admin buyruqlari:
 /loyihalar — loyihalar ro'yxati
 /loyiha_post <id> — loyiha posti (avval ko'rsatib, tasdiqlatadi)
 /loyiha_ochir <id> — loyiha o'chirish
-/loyiha_qosh — yangi loyiha (format ko'rsatiladi)`;
+/loyiha_qosh — yangi loyiha (format ko'rsatiladi)
+
+📅 30 kunlik JS Challenge:
+/challenge on|off — yoqish / o'chirish
+/daraja yashil|sariq|qizil — DARAJANI SIZ belgilaysiz
+/challenge_holat — holat (kun, daraja, vaqt)
+/challenge_korish — joriy kunни shaxsan ko'rish
+/challenge_post — joriy kunни hoziroq joylash
+/challenge_kun <n> — kunни o'zgartirish (1-30)
+/challenge_vaqt 09:00 — kunlik vaqt`;
 
 function tashkentNow(): { hhmm: string; minutes: number } {
   const p = new Intl.DateTimeFormat("en-GB", {
@@ -189,6 +207,83 @@ export function startAdminBot(store: StateStore): Bot {
         ? "✅ Rasm generatsiya YOQILDI — postlarга AI rasm qo'shiladi."
         : "✅ Rasm generatsiya O'CHIRILDI — postlar matn ko'rinishда."
     );
+  });
+
+  // ---- 30 kunlik Challenge ----
+  bot.command("challenge", (ctx) => {
+    const v = (ctx.match ?? "").trim().toLowerCase();
+    if (v === "on") {
+      store.setSetting("challenge_on", "1");
+      const cs = challengeState(store);
+      return ctx.reply(
+        `✅ Challenge YOQILDI.\nKun: ${cs.day}/30 · Daraja: ${LEVEL_META[cs.level].emoji} ${LEVEL_META[cs.level].name} · Vaqt: ${cs.time}\nHar kuni ${cs.time} (Toshkent) da avtomatik post ketadi.`
+      );
+    }
+    if (v === "off") {
+      store.setSetting("challenge_on", "0");
+      return ctx.reply("✅ Challenge O'CHIRILDI.");
+    }
+    return ctx.reply("❌ /challenge on  yoki  /challenge off");
+  });
+
+  bot.command("daraja", (ctx) => {
+    const lvl = parseLevel(ctx.match ?? "");
+    if (!lvl) return ctx.reply("❌ Daraja: yashil | sariq | qizil\nMasalan: /daraja yashil");
+    store.setSetting("challenge_level", lvl);
+    return ctx.reply(
+      `✅ Daraja: ${LEVEL_META[lvl].emoji} ${LEVEL_META[lvl].name}\nEndi o'quvchilarга shu darajада vazifa ketadi.`
+    );
+  });
+
+  bot.command("challenge_kun", (ctx) => {
+    const n = parseInt((ctx.match ?? "").trim(), 10);
+    if (!Number.isFinite(n) || n < 1 || n > 30) {
+      return ctx.reply("❌ 1-30 orasида kun yuboring. Masalan: /challenge_kun 5");
+    }
+    store.setSetting("challenge_day", String(n));
+    return ctx.reply(`✅ Joriy kun: ${n}/30`);
+  });
+
+  bot.command("challenge_vaqt", (ctx) => {
+    const t = parseTimes(ctx.match ?? "")[0];
+    if (!t) return ctx.reply("❌ Vaqt: /challenge_vaqt 09:00");
+    store.setSetting("challenge_time", t);
+    return ctx.reply(`✅ Challenge vaqti: ${t} (Toshkent)`);
+  });
+
+  bot.command("challenge_holat", (ctx) => {
+    const cs = challengeState(store);
+    return ctx.reply(
+      [
+        `📅 Challenge: ${cs.on ? "▶️ faol" : "⏸ o'chirilgan"}`,
+        `Kun: ${cs.day}/30`,
+        `Daraja: ${LEVEL_META[cs.level].emoji} ${LEVEL_META[cs.level].name}`,
+        `Vaqt: ${cs.time} (Toshkent)`,
+        `Bugun joylandi: ${cs.postedDate === tashkentToday() ? "ha ✅" : "yo'q"}`,
+      ].join("\n")
+    );
+  });
+
+  // Joriy kunни shaxsan ko'rib chiqish (kanalга yubormaydi)
+  bot.command("challenge_korish", (ctx) =>
+    ctx.reply(challengePreviewText(store), {
+      parse_mode: "HTML",
+      link_preview_options: { is_disabled: true },
+    })
+  );
+
+  // Joriy kunни hoziroq kanalга joylash (bir kунда bir marta)
+  bot.command("challenge_post", async (ctx) => {
+    if (challengeState(store).postedDate === tashkentToday()) {
+      return ctx.reply("⚠️ Bugun challenge posti allaqачон joylangan.");
+    }
+    await ctx.reply("⏳ Challenge posti tayyorlanmoqda...");
+    try {
+      const r = await postChallengeAndAdvance(store);
+      return ctx.reply(`✅ Yuborildi: ${r.label}${r.finished ? "\n🎉 Challenge tugadi!" : ""}`);
+    } catch (err) {
+      return ctx.reply(`❌ ${(err as Error).message}`);
+    }
   });
 
   bot.command("soni", (ctx) => {
